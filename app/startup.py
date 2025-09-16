@@ -3,7 +3,7 @@ from nicegui import ui
 from pathlib import Path
 
 from app.class_PingCard import *
-from app.class_ProjectTree import *
+
 
 
 def startup():
@@ -47,7 +47,7 @@ def startup():
 
     # Main Body: All card classes should be contained in main_body
     main_body = ui.element('div').classes('flex size-full gap-1')
-    add_ping_card(container=main_body, target='10.20.30.5')
+    add_ping_card(container=main_body)
         
 def shutdown():
     # need a graceful shutdown
@@ -58,6 +58,6 @@ def shutdown():
 # DNS (lookup, MX, TXT, etc.), cURL, Python, SH cards
 def add_ping_card(container: ui.element, target=''):
     if not target:
-        target = 'None'
+        target = 'localhost'
     PingCard(target=target, container=container)
     container.update()
