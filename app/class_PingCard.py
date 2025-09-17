@@ -87,6 +87,11 @@ class PingCard:
         self.timer.cancel()
         self.card.delete()
 
+    def variables(self):
+        vars = dict(title = self.title,
+                    target = self.target)
+        return vars
+
     async def sh_ping(self, target: str = '') -> subprocess.CompletedProcess:
         """
         Execute ping without blocking the event loop.

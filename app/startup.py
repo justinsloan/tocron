@@ -70,3 +70,7 @@ def add_ping_card(container: ui.element, target=''):
     container.update()
     #nodes.append(Node(title='', target=target))
     #save_data('nodes.json', nodes)
+
+def save_config():
+    pass
+    # keeping track of classes in a dict
