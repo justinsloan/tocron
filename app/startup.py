@@ -2,8 +2,9 @@ import subprocess
 from nicegui import ui
 from pathlib import Path
 
+#from app.helper_functions import *
+from app.local_dataclasses import *
 from app.class_PingCard import *
-
 
 
 def startup():
@@ -24,7 +25,7 @@ def startup():
 
         # Right
         ui.space()
-        project_name = ui.label('Amity').classes('text-2xl')
+        project_name = ui.label('Anchor').classes('text-2xl')
         ui.space()
         ui.switch().bind_value(dark_mode)#.on_value_change(lambda: switch_dark_mode)
 
@@ -47,7 +48,13 @@ def startup():
 
     # Main Body: All card classes should be contained in main_body
     main_body = ui.element('div').classes('flex size-full gap-1')
-    add_ping_card(container=main_body)
+    #add_ping_card(container=main_body)
+
+    raw_data = load_data("nodes.json")
+    loaded_nodes: List[Node] = [Node.from_dict(d) for d in raw_data]
+
+    for node in loaded_nodes:
+        add_ping_card(target=node.target, container=main_body)
         
 def shutdown():
     # need a graceful shutdown
@@ -61,3 +68,5 @@ def add_ping_card(container: ui.element, target=''):
         target = 'localhost'
     PingCard(target=target, container=container)
     container.update()
+    #nodes.append(Node(title='', target=target))
+    #save_data('nodes.json', nodes)

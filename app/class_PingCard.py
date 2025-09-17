@@ -12,6 +12,16 @@ from nicegui import ui
 # self.timer.active     BOOL
 #--------------------------------------------------------------------
 
+def round_to_int(number: float):
+    """
+    Round the given number to the nearest integer unless
+    the int is zero.
+    """
+    if float(number) < 1:
+        return float(number)
+    else:
+        return round(float(number))
+
 
 class PingCard:
     def __init__(self, target: str, container: ui.element, interval=60):
@@ -77,16 +87,6 @@ class PingCard:
         self.timer.cancel()
         self.card.delete()
 
-    def round_to_int(self, number: float):
-        """
-        Round the given number to the nearest integer unless
-        the int is zero.
-        """
-        if float(number) < 1:
-            return number
-        else:
-            return round(float(number))
-
     async def sh_ping(self, target: str = '') -> subprocess.CompletedProcess:
         """
         Execute ping without blocking the event loop.
@@ -126,9 +126,8 @@ class PingCard:
                 )
 
                 if match:
-                    # round so we get 123ms instead of 123.43ms
                     min_val = match.group(1)
-                    avg_val = self.round_to_int(match.group(2))
+                    avg_val = round_to_int(match.group(2))
                     max_val = match.group(3)
                     mdev_val = match.group(4)
 

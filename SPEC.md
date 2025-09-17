@@ -9,16 +9,17 @@ When everything looks good on the network, that is, all systems are "green", Kor
 To keep track of all this activity, Kori maintains a list of Nodes and a list of Tasks. Each Task, such as a PING command, only has one associated Node, but each Node can have multiple Tasks.
 
 ## Node Attributes
- - ID: unique integer value
- - Title: arbitrary name of the Node
- - Target: the IP address, hostname, or URL of the Node
- - Log: admin notes and log of events
+ - id: unique integer value
+ - title: arbitrary name of the Node
+ - target: the IP address, hostname, or URL of the Node
+ - log: admin notes and log of events
 
 ## Task Attributes
- - ID: unique integer value
- - Type: PING, cURL, Traceroute, DNS query, etc.
- - Node: ID of the associated Node
- - Interval: how often the task should repeat (seconds)
+ - id: unique integer value
+ - type: PING, cURL, Traceroute, DNS query, etc.
+ - node: ID of the associated Node
+ - interval: how often the task should repeat (seconds)
+ - log: admin notes and log of events
 
 ## Misc. Notes
 CAMEO - Command, Administration, Monitoring, Execution & Oversight
