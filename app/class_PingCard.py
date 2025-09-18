@@ -2,6 +2,7 @@ import re
 import asyncio
 import subprocess
 from nicegui import ui
+from app.helper_functions import *
 from app.class_Registry import *
 
 
@@ -13,21 +14,12 @@ from app.class_Registry import *
 # self.timer.active     BOOL
 #--------------------------------------------------------------------
 
-def round_to_int(number: float):
-    """
-    Round the given number to the nearest integer unless
-    the int is zero.
-    """
-    if float(number) < 1:
-        return float(number)
-    else:
-        return round(float(number))
-
 
 class PingCard(metaclass=Registry):
     def __init__(self, target: str, container: ui.element, interval=60):
         # instantiate variables
         self.interval = interval
+        self.ping_history = []
         self.in_trash = 'false' # <-- str, not bool
 
         # creates timer and performs initial ping
@@ -36,21 +28,22 @@ class PingCard(metaclass=Registry):
         with container:
             self.card = ui.card().classes('m-2 w-full sm:max-w-56 break-inside-avoid')
             with self.card:
-                self.front = ui.card_section()#.classes('transition')
+                self.title = ui.label(target).classes('m-2 text-xl font-bold')
+                self.front = ui.card_section().classes('m-3 p-0')
                 with self.front:
                     self.card_front(target)
 
-                self.back = ui.card_section()#.classes('transition')
+                self.back = ui.card_section().classes('m-3 p-0')
                 self.back.set_visibility(False)
                 with self.back:
                     self.card_back()
 
     def card_front(self, target: str):
-        self.title = ui.label('Ping Card').classes('text-xl font-bold')
         self.target = ui.label(target)
         self.result = ui.label('0ms')
-        ui.icon('network_ping').on('click', lambda: asyncio.create_task(self.ping())).classes('m-1 text-xl')
-        ui.icon('settings_applications').on('click', self.flip_card).classes('m-1 text-xl')
+        ui.button(icon='network_ping', on_click=lambda: asyncio.create_task(self.ping())).props('flat no-shadow').classes(
+            'text-xs text-white m-r1 p-1')
+        ui.button(icon='settings_applications', on_click=self.flip_card).props('flat no-shadow').classes('text-xs text-white m-1 p-1')
 
     def card_back(self):
         with ui.input('Target') as self.target_input:
@@ -64,17 +57,32 @@ class PingCard(metaclass=Registry):
             title_checkbox = ui.checkbox('Show card title')
             title_checkbox.set_value(True)
             self.title.bind_visibility_from(title_checkbox, 'value')
-            ui.button(icon='delete', on_click=self.trash).classes('text-xs bg-red')
+            ui.label('Danger Zone').classes('text-xs text-red')
+            ui.button(icon='delete', on_click=self.trash).props('flat ').classes('text-xs text-red bg-red-100')
 
-        ui.icon('save').on('click', self.save_settings).classes('m-1 text-xl')
+        self.ping_chart = ui.echart({
+            'xAxis': {'type': 'category'},
+            'yAxis': {'type': 'value'},
+            'series': [{'type': 'line', 'data': self.ping_history}],
+        }, theme={'color': ['#b687ac', '#28738a', '#a78f8f'],
+                  #'backgroundColor': 'rgba(254,248,239,1)',
+        }, on_point_click=ui.notify).on('click', lambda: self.ping_chart.update())
+
+        ui.button(icon='save', on_click=self.save_settings).props('flat no-shadow').classes('text-xs')
 
     def flip_card(self):
         if self.front.visible:
+            # flip to back
             self.front.set_visibility(False)
             self.back.set_visibility(True)
+            self.card.classes(replace='')
+            self.timer.active = False
+            self.ping_chart.update()
         else:
+            # flip to front
             self.front.set_visibility(True)
             self.back.set_visibility(False)
+            self.timer.active = True
 
     def save_settings(self):
         self.flip_card()
@@ -150,6 +158,7 @@ class PingCard(metaclass=Registry):
 
                     self.result.set_text(str(speed['avg']) + 'ms')
                     self.card.classes(replace='bg-green-600')
+                    self.ping_history.append(avg_val)
                 else:
                     self.result.set_text('Red: String parse error')
                     self.card.classes(replace='bg-red-500')
