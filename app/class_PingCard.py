@@ -113,7 +113,7 @@ class PingCard(metaclass=Registry):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None,
-            lambda: subprocess.run(['ping', '-c', '1', '-w', '5', f'{target}'], capture_output=True, text=True)
+            lambda: subprocess.run(['ping', '-c', '1', f'{target}'], capture_output=True, text=True)
         )
 
     async def ping(self, target=''):

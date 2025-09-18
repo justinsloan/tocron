@@ -5,4 +5,6 @@ app.on_startup(startup)
 
 ui.run(title="Anchor",
        port=native.find_open_port(),
-       favicon='🚀')#native=True#reload=False)
+       favicon='🚀',
+       #native=True,
+       reload=False)
