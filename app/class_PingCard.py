@@ -2,6 +2,7 @@ import re
 import asyncio
 import subprocess
 from nicegui import ui
+from app.class_Registry import *
 
 
 #--------------------------------------------------------------------
@@ -23,10 +24,11 @@ def round_to_int(number: float):
         return round(float(number))
 
 
-class PingCard:
+class PingCard(metaclass=Registry):
     def __init__(self, target: str, container: ui.element, interval=60):
         # instantiate variables
         self.interval = interval
+        self.in_trash = 'false' # <-- str, not bool
 
         # creates timer and performs initial ping
         self.timer = ui.timer(interval=self.interval, callback=lambda: asyncio.create_task(self.ping()))
@@ -85,12 +87,15 @@ class PingCard:
 
     def trash(self):
         self.timer.cancel()
+        self.in_trash = 'true' # <-- str, not bool
         self.card.delete()
 
-    def variables(self):
-        vars = dict(title = self.title,
-                    target = self.target)
-        return vars
+    def _get_properties(self):
+        values = dict(type = 'ping',
+                      title = self.title.text,
+                      target = self.target.text,
+                      trash = self.in_trash)
+        return values
 
     async def sh_ping(self, target: str = '') -> subprocess.CompletedProcess:
         """
