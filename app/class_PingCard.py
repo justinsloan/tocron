@@ -46,7 +46,7 @@ class PingCard(metaclass=Registry):
         _button_classes = 'text-xs text-white p-1'
 
         self.target = ui.label(target)
-        self.result = ui.label('0ms')
+        self.result = ui.label('0 ms')
 
         with ui.element('div') as self.chart_div, ui.card():
             self.chart_div.set_visibility(False)
@@ -61,7 +61,7 @@ class PingCard(metaclass=Registry):
             }, on_point_click=ui.notify,
             ).on('click', lambda: self.ping_chart.update())
 
-        with ui.row().classes('p-0 m-0 w-full'):
+        with ui.row().classes('tight p-0 m-0 w-full'):
             ui.button(icon='network_ping', on_click=lambda: asyncio.create_task(self.ping())).props(_button_props).classes(
                 _button_classes)
             ui.button(icon='bar_chart', on_click=self.show_chart).props(_button_props).classes(_button_classes)
@@ -160,12 +160,12 @@ class PingCard(metaclass=Registry):
         try:
             response = await asyncio.wait_for(self.sh_ping(target), timeout=5)
         except asyncio.TimeoutError:
-            self.result.set_text('Invalid Host')
-            self.card.classes(replace='bg-red-500')
-            #response.kill()
+            self.result.set_text('Ping timed out.')
+            self.card.classes(replace='bg-yellow-300')
             return
 
-        match = re.search(r'(\d+)\s+received', response.stdout)
+        match = re.search(r'(\d+)(?: packets)? received', response.stdout)
+
         if not match:
             self.result.set_text(response.stderr)
             self.card.classes(replace='bg-red-500')
@@ -175,22 +175,26 @@ class PingCard(metaclass=Registry):
                 self.card.classes(replace='bg-red-500')
             else:
                 # Regular expression to capture the min/avg/max/mdev values
-                match = re.search(
-                    r"rtt min/avg/max/mdev = (\d+\.\d+)/(\d+\.\d+)/(\d+\.\d+)/(\d+\.\d+)",
-                    response.stdout,
-                )
+                # match = re.search(
+                #     r'(\d+)/(\d+)/(\d+)/\d+\.\d+ ms',
+                #     response.stdout,
+                # )
 
-                if match:
-                    min_val = match.group(1)
-                    avg_val = round_to_int(match.group(2))
-                    max_val = match.group(3)
-                    mdev_val = match.group(4)
+                line = response.stdout.splitlines()[-1]              # example: round-trip min/avg/max/stddev = 45/60/67/0.000 ms
+                numerical_part = line.split('=')[1].strip()          # split on '=' to get just '45/60/67/0.000 ms'
+                parts = numerical_part.replace(' ms', '').split('/') # split on '/' to get a list of [45, 60, 67, 0]
+
+                if parts:
+                    min_val = parts[0]
+                    avg_val = parts[1]
+                    max_val = parts[2]
+                    #mdev_val = match.group(4)
 
                     speed = {
                         'min': min_val,
                         'avg': avg_val,
-                        'max': max_val,
-                        'mdev': mdev_val
+                        'max': max_val
+                        #'mdev': mdev_val
                     }
 
                     self.result.set_text(str(speed['avg']) + ' ms')
