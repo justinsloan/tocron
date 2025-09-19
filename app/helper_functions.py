@@ -22,9 +22,6 @@ def check_registrar(domain):
     if query: # If domain exists
         registrar = query.registrar
         expiration = str(query.expiration_date)
-        if registrar.lower().startswith("cloudflare"):
-            return 'PASSED', registrar, expiration
-        else:
-            return 'FAILED', registrar, expiration
+        return registrar, expiration
     else:
-        return 'ERROR', 'UNKNOWN', 'UNKNOWN'
+        return 'UNKNOWN', 'UNKNOWN'

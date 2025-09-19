@@ -118,11 +118,10 @@ class PingCard(metaclass=Registry):
         asyncio.create_task(self.ping())
 
     def fingerprint(self):
-        result, registrar, expiration = check_registrar(self.target.text)
+        registrar, expiration = check_registrar(self.target.text)
         query = dns.resolver.resolve(self.target.text)
-        ip_addr = ''
 
-        with ui.dialog() as dialog, ui.card():
+        with ui.dialog() as dialog, ui.card().tight().classes('p-3'):
             ui.label('Registrar: ' + registrar)
             ui.label('Expiration: ' + expiration)
             for ip in query:
