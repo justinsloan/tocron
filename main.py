@@ -7,4 +7,5 @@ ui.run(title="Anchor",
        port=native.find_open_port(),
        favicon='🚀',
        #native=True,
-       reload=False)
+       #reload=False
+       )

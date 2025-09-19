@@ -1,6 +1,8 @@
 import re
 import asyncio
 import subprocess
+import uuid
+import dns.resolver
 from nicegui import ui
 from app.helper_functions import *
 from app.class_Registry import *
@@ -18,6 +20,7 @@ from app.class_Registry import *
 class PingCard(metaclass=Registry):
     def __init__(self, target: str, container: ui.element, interval=60):
         # instantiate variables
+        self.uuid = uuid.uuid4()
         self.interval = interval
         self.ping_history = []
         self.in_trash = 'false' # <-- str, not bool
@@ -39,11 +42,32 @@ class PingCard(metaclass=Registry):
                     self.card_back()
 
     def card_front(self, target: str):
+        _button_props = 'flat no-shadow'
+        _button_classes = 'text-xs text-white p-1'
+
         self.target = ui.label(target)
         self.result = ui.label('0ms')
-        ui.button(icon='network_ping', on_click=lambda: asyncio.create_task(self.ping())).props('flat no-shadow').classes(
-            'text-xs text-white m-r1 p-1')
-        ui.button(icon='settings_applications', on_click=self.flip_card).props('flat no-shadow').classes('text-xs text-white m-1 p-1')
+
+        with ui.element('div') as self.chart_div, ui.card():
+            self.chart_div.set_visibility(False)
+            self.chart_div.classes('mx-auto justify-center rounded-lg')
+            self.ping_chart = ui.echart({
+                'xAxis': {'type': 'category', 'show': False},
+                'yAxis': {'type': 'value', 'name': 'Response Time (ms)'},
+                'grid': {'show': False},
+                'series': [{'type': 'line', 'data': self.ping_history}],
+            }, theme={'color': ['#b687ac', '#28738a', '#a78f8f'],
+                      'backgroundColor': '#1d1d1d',
+            }, on_point_click=ui.notify,
+            ).on('click', lambda: self.ping_chart.update())
+
+        with ui.row().classes('p-0 m-0 w-full'):
+            ui.button(icon='network_ping', on_click=lambda: asyncio.create_task(self.ping())).props(_button_props).classes(
+                _button_classes)
+            ui.button(icon='bar_chart', on_click=self.show_chart).props(_button_props).classes(_button_classes)
+            ui.button(icon='fingerprint', on_click=self.fingerprint).props(_button_props).classes(_button_classes)
+            ui.space()
+            ui.button(icon='settings_applications', on_click=self.flip_card).props(_button_props).classes(_button_classes)
 
     def card_back(self):
         with ui.input('Target') as self.target_input:
@@ -60,14 +84,6 @@ class PingCard(metaclass=Registry):
             ui.label('Danger Zone').classes('text-xs text-red')
             ui.button(icon='delete', on_click=self.trash).props('flat ').classes('text-xs text-red bg-red-100')
 
-        self.ping_chart = ui.echart({
-            'xAxis': {'type': 'category'},
-            'yAxis': {'type': 'value'},
-            'series': [{'type': 'line', 'data': self.ping_history}],
-        }, theme={'color': ['#b687ac', '#28738a', '#a78f8f'],
-                  #'backgroundColor': 'rgba(254,248,239,1)',
-        }, on_point_click=ui.notify).on('click', lambda: self.ping_chart.update())
-
         ui.button(icon='save', on_click=self.save_settings).props('flat no-shadow').classes('text-xs')
 
     def flip_card(self):
@@ -77,12 +93,20 @@ class PingCard(metaclass=Registry):
             self.back.set_visibility(True)
             self.card.classes(replace='')
             self.timer.active = False
-            self.ping_chart.update()
         else:
             # flip to front
             self.front.set_visibility(True)
             self.back.set_visibility(False)
             self.timer.active = True
+
+    def show_chart(self):
+        if self.chart_div.visible:
+            # hide the chart
+            self.chart_div.set_visibility(False)
+        else:
+            # show the chart
+            self.ping_chart.update()
+            self.chart_div.set_visibility(True)
 
     def save_settings(self):
         self.flip_card()
@@ -92,6 +116,19 @@ class PingCard(metaclass=Registry):
         """Changes the ping target."""
         self.target.set_text(new_target)
         asyncio.create_task(self.ping())
+
+    def fingerprint(self):
+        result, registrar, expiration = check_registrar(self.target.text)
+        query = dns.resolver.resolve(self.target.text)
+        ip_addr = ''
+
+        with ui.dialog() as dialog, ui.card():
+            ui.label('Registrar: ' + registrar)
+            ui.label('Expiration: ' + expiration)
+            for ip in query:
+                ui.label('IP: ' + ip.to_text())
+            ui.button('Close', on_click=dialog.close)
+        dialog.open()
 
     def trash(self):
         self.timer.cancel()
@@ -156,9 +193,11 @@ class PingCard(metaclass=Registry):
                         'mdev': mdev_val
                     }
 
-                    self.result.set_text(str(speed['avg']) + 'ms')
+                    self.result.set_text(str(speed['avg']) + ' ms')
                     self.card.classes(replace='bg-green-600')
                     self.ping_history.append(avg_val)
+                    if self.chart_div.visible:
+                        self.ping_chart.update()
                 else:
                     self.result.set_text('Red: String parse error')
                     self.card.classes(replace='bg-red-500')
