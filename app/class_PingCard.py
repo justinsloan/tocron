@@ -18,7 +18,7 @@ from app.class_Registry import *
 
 
 class PingCard(metaclass=Registry):
-    def __init__(self, target: str, container: ui.element, interval=60):
+    def __init__(self, title: str, target: str, container: ui.element, interval=60):
         # instantiate variables
         self.uuid = uuid.uuid4()
         self.interval = interval
@@ -31,7 +31,7 @@ class PingCard(metaclass=Registry):
         with container:
             self.card = ui.card().classes('m-2 w-full sm:max-w-56 break-inside-avoid')
             with self.card:
-                self.title = ui.label(target).classes('m-2 text-xl font-bold')
+                self.title = ui.label(title).classes('m-2 text-xl font-bold')
                 self.front = ui.card_section().classes('m-3 p-0')
                 with self.front:
                     self.card_front(target)
@@ -70,10 +70,14 @@ class PingCard(metaclass=Registry):
             ui.button(icon='settings_applications', on_click=self.flip_card).props(_button_props).classes(_button_classes)
 
     def card_back(self):
+        with ui.input('Title') as self.title_input:
+            self.title_input.set_value(self.title.text)
+
         with ui.input('Target') as self.target_input:
             self.target_input.set_value(self.target.text)
             with self.target_input.add_slot('append'):
-                ui.icon('network_ping').classes('text-red cursor-pointer')
+                ui.icon('network_ping').classes('cursor-pointer')
+                #ui.icon.on('click', lambda: asyncio.create_task(self.ping()))
 
         ui.switch('Timer').bind_value_to(self.timer, 'active').set_value(True)
 
@@ -109,8 +113,9 @@ class PingCard(metaclass=Registry):
             self.chart_div.set_visibility(True)
 
     def save_settings(self):
-        self.flip_card()
-        self.set_target(self.target_input.value)
+            self.flip_card()
+            self.title.set_text(self.title_input.value)
+            self.set_target(self.target_input.value)
 
     def set_target(self, new_target: str) -> None:
         """Changes the ping target."""
@@ -125,7 +130,12 @@ class PingCard(metaclass=Registry):
             ui.label('Registrar: ' + registrar)
             ui.label('Expiration: ' + expiration)
             for ip in query:
-                ui.label('IP: ' + ip.to_text())
+                ip_addr = ip.to_text()
+                country = get_country_from_ip(ip_addr)
+                if country:
+                    ui.label('IP: ' + ip_addr + f' [{country}]')
+                else:
+                    ui.label('IP: ' + ip_addr)
             ui.button('Close', on_click=dialog.close)
         dialog.open()
 

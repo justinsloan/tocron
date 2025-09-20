@@ -46,8 +46,8 @@ def startup():
                 log = ui.log().classes('w-full h-20')
                 log.push('Started...')
 
-    with ui.page_sticky(position='bottom-right', x_offset=20, y_offset=20):
-        ui.button(on_click=footer.toggle, icon='contact_support').props('fab')
+    # with ui.page_sticky(position='bottom-right', x_offset=20, y_offset=20):
+    #     ui.button(on_click=footer.toggle, icon='contact_support').props('fab')
 
     # ------------------------------------------------------------
     # Main Body: All card classes should be contained in main_body
@@ -59,17 +59,18 @@ def startup():
         loaded_nodes: List[Node] = [Node.from_dict(d) for d in raw_data]
 
         for node in loaded_nodes:
-            add_ping_card(target=node.target, container=main_body)
+            add_ping_card(title=node.title, target=node.target, container=main_body)
     except:
         add_ping_card(target='localhost', container=main_body)
 
 # can we use one handler to add all card types?
 # this way we only need one function instead of a func per type.
 # DNS (lookup, MX, TXT, etc.), cURL, Python, SH cards
-def add_ping_card(container: ui.element, target=''):
+def add_ping_card(container: ui.element, title='', target=''):
     if not target:
         target = 'localhost'
-    PingCard(target=target, container=container)
+        title  = 'localhost'
+    PingCard(title=title, target=target, interval=60, container=container)
     container.update()
 
 def save_config():
