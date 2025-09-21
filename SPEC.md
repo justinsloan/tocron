@@ -31,3 +31,5 @@ Card-based interface. Tools to ping, dig, curl, etc. Ability to run arbitrary Py
 Nodes and Tasks
 
 Both nodes and tasks can be saved or temporary
+
+When you add a Node, Anchor will attempt to ping the node automatically. If the response is positive, the timer will be turn on. If the response is negative, the timer will be turned off.

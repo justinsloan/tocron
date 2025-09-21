@@ -21,7 +21,7 @@ def check_registrar(domain):
         result, registrar, expiration = check_registrar(domain)
     """
     query = whois(domain)
-    if query: # If domain exists
+    if query: # if domain exists
         registrar = query.registrar
         expiration = str(query.expiration_date)
         return registrar, expiration
