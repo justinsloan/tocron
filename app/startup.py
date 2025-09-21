@@ -12,17 +12,20 @@ from app.class_PingCard import *
 def startup():
     dark_mode = ui.dark_mode(True)
 
-    _glass = 'backdrop-filter: blur(12px) saturate(165%); -webkit-backdrop-filter: blur(12px) saturate(165%); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.125);'
+    _glass = 'backdrop-filter: blur(12px) saturate(148%); -webkit-backdrop-filter: blur(12px) saturate(148%); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.125);'
 
     # ------------------------------------------------------------
     # Header Row
     # ------------------------------------------------------------
-    with ui.header().classes(replace='row items-center pl-5 pr-5 dark:bg-gray-900') as header:
+    with ui.header().classes(replace='row items-center m-2 pl-5 pr-5 dark:bg-gray-900').style(_glass) as header:
         # Menu
-        with ui.button(icon='menu').classes('mr-1').style(_glass):
+        with ui.button(icon='menu').classes('mr-1 bg-transparent').style(_glass):
             with ui.menu() as menu:
                 ui.menu_item('Ping Card', lambda: add_ping_card(container=main_body))
                 ui.menu_item('Do Something...', lambda: ui.notify('Selected item 2'))
+                ui.separator()
+                ui.menu_item('Show Nodes List', lambda: left_drawer.set_value(True))
+                ui.menu_item('Show Pending Tasks', lambda: right_drawer.set_value(True))
                 ui.separator()
                 ui.menu_item('Save Config', lambda: save_config())
                 #ui.menu_item('Keep Menu Open After Click', lambda: ui.notify('Keep Menu Open'), auto_close=False)
@@ -31,14 +34,16 @@ def startup():
                     ui.icon('contact_support').classes('m-0 p-0 text-2xl')
                     ui.menu_item('Support', lambda: footer.toggle)
                 ui.menu_item('Quit', lambda: shutdown())
-        ui.button(icon='add', on_click=lambda: add_ping_card(container=main_body)).style(_glass)
+        ui.button(icon='add', on_click=lambda: add_ping_card(container=main_body)).classes('bg-transparent').style(_glass)
+
+        # Center-ish
+        ui.space()
+        ui.label('⚓ ANCHOR').classes('p-1 pl-2 pr-2 m-1 text-xl font-mono') \
+                            .tooltip('Administrative Network Command Hub for Operations & Response')
 
         # Right
         ui.space()
-        ui.label('⚓ ANCHOR').classes('p-1 m-1 text-xl').style(_glass) \
-                            .tooltip('Administrative Network Command Hub for Operations & Response')
-        ui.space()
-        ui.switch().bind_value(dark_mode)
+        ui.switch().bind_value(dark_mode).props('color=grey')
 
     # ------------------------------------------------------------
     # Footer
@@ -57,6 +62,26 @@ def startup():
     # ------------------------------------------------------------
     # with ui.page_sticky(position='bottom-right', x_offset=20, y_offset=20):
     #     ui.button(on_click=footer.toggle, icon='contact_support').props('fab')
+
+    # ------------------------------------------------------------
+    # Left Drawer:
+    # ------------------------------------------------------------
+    with ui.left_drawer().classes('ml-2 mt-4 bg-gray-900/60') \
+                         .style(_glass) \
+                         .props('flat no-shadow bg-green') as left_drawer:
+        # Header
+        with ui.row().classes('items-center'):
+            ui.button(icon='keyboard_arrow_left', on_click=lambda: left_drawer.set_value(False)).tooltip('Close drawer').props('flat no-shadow')
+            ui.label('Nodes List')
+
+    # ------------------------------------------------------------
+    # Right Drawer:
+    # ------------------------------------------------------------
+    with ui.right_drawer().classes('mr-2 mt-4 bg-gray-900/60').style(_glass) as right_drawer:
+        # Header
+        with ui.row().classes('items-center justify-items-end'):
+            ui.label('Pending Tasks')
+            ui.button(icon='keyboard_arrow_right', on_click=lambda: right_drawer.set_value(False)).tooltip('Close drawer').props('flat no-shadow')
 
     # ------------------------------------------------------------
     # Main Body: All card classes should be contained in main_body

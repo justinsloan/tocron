@@ -1,7 +1,6 @@
 import re
 import asyncio
 import subprocess
-import uuid
 import dns.resolver
 from nicegui import ui
 from app.helper_functions import *
@@ -20,13 +19,15 @@ from app.class_Registry import *
 class PingCard(metaclass=Registry):
     def __init__(self, title: str, target: str, container: ui.element, interval=60):
         # instantiate variables
-        self.uuid = uuid.uuid4()
         self.interval = interval
         self.ping_history = []
+        self.target = ''
+        self.result = ''
         self.in_trash = 'false' # <-- str, not bool
 
         # styles
         self._glass = 'backdrop-filter: blur(12px) saturate(165%); -webkit-backdrop-filter: blur(12px) saturate(165%); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.125);'
+        _card_classes = 'm-3 p-0'
 
         # creates timer and performs initial ping
         self.timer = ui.timer(interval=self.interval, callback=lambda: asyncio.create_task(self.ping()))
@@ -34,12 +35,12 @@ class PingCard(metaclass=Registry):
         with container:
             self.card = ui.card().classes('m-2 w-full sm:max-w-56 break-inside-avoid').style(self._glass)
             with self.card:
-                self.title = ui.label(title).classes('m-2 text-xl font-bold')
-                self.front = ui.card_section().classes('m-3 p-0')
+                self.title = ui.label(title).classes('m-2 ml-3 text-xl font-bold')
+                self.front = ui.card_section().classes(_card_classes)
                 with self.front:
                     self.card_front(target)
 
-                self.back = ui.card_section().classes('m-3 p-0')
+                self.back = ui.card_section().classes(_card_classes)
                 self.back.set_visibility(False)
                 with self.back:
                     self.card_back()
@@ -79,18 +80,17 @@ class PingCard(metaclass=Registry):
         with ui.input('Target') as self.target_input:
             self.target_input.set_value(self.target.text)
             with self.target_input.add_slot('append'):
-                ui.icon('network_ping').classes('cursor-pointer')
+                self.target_status_icon = ui.icon('network_ping').on('click', lambda: asyncio.create_task(self.ping(self.target_input.value))).classes('cursor-pointer text-green')
                 #ui.icon.on('click', lambda: asyncio.create_task(self.ping()))
 
-        ui.switch('Timer').bind_value_to(self.timer, 'active').set_value(True)
+        ui.switch('Monitor').props('color=grey').bind_value_to(self.timer, 'active').set_value(True)
 
-        with (ui.expansion('More Options')):
+        with ui.expansion('More Options').classes('mb-2').style(self._glass):
             title_checkbox = ui.checkbox('Show card title').classes('pr-2').style(self._glass)
             title_checkbox.set_value(True)
             self.title.bind_visibility_from(title_checkbox, 'value')
             ui.label('Danger Zone').classes('text-xs text-red')
             ui.button(icon='delete', on_click=self.trash).props('flat ').classes('text-xs text-red bg-red-100').style(self._glass)
-            ui.separator()
 
         ui.button(icon='save', on_click=self.save_settings).props('flat no-shadow').classes('text-xs').style(self._glass)
 
@@ -99,7 +99,7 @@ class PingCard(metaclass=Registry):
             # flip to back
             self.front.set_visibility(False)
             self.back.set_visibility(True)
-            self.card.classes(replace='')
+            self.set_background('bg-black/30')
             self.timer.active = False
         else:
             # flip to front
@@ -187,18 +187,21 @@ class PingCard(metaclass=Registry):
             response = await asyncio.wait_for(self.sh_ping(target), timeout=5)
         except asyncio.TimeoutError:
             self.result.set_text('Ping timed out.')
-            self.set_background('bg-yellow-300/60')
+            self.set_background('bg-yellow-300/20')
+            self.target_status_icon.classes(replace='text-yellow')
             return
 
         match = re.search(r'(\d+)(?: packets)? received', response.stdout)
 
         if not match:
             self.result.set_text(response.stderr)
-            self.set_background('bg-red-600/60')
+            self.set_background('bg-red-500/20')
+            self.target_status_icon.classes(replace='text-red')
         else:
             if not int(match.group(1)) > 0:
                 self.result.set_text('Red: Ping Failed')
-                self.set_background('bg-red-600/60')
+                self.set_background('bg-red-500/20')
+                self.target_status_icon.classes(replace='text-red')
             else:
                 line = response.stdout.splitlines()[-1]              # example: round-trip min/avg/max/stddev = 45/60/67/0.000 ms
                 numerical_part = line.split('=')[1].strip()          # split on '=' to get just '45/60/67/0.000 ms'
@@ -218,10 +221,11 @@ class PingCard(metaclass=Registry):
                     }
 
                     self.result.set_text(str(speed['avg']) + ' ms')
-                    self.set_background('bg-green-600/60')
+                    self.set_background('bg-green-500/20')
+                    self.target_status_icon.classes(replace='text-green')
                     self.ping_history.append(avg_val)
                     if self.chart_div.visible:
                         self.ping_chart.update()
                 else:
                     self.result.set_text('Red: String parse error')
-                    self.set_background('bg-yellow-300/60')
+                    self.target_status_icon.classes(replace='text-yellow')
