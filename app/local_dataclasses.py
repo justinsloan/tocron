@@ -1,25 +1,25 @@
-from dataclasses import dataclass
-from typing import List
+#from dataclasses import dataclass
+#from typing import List
 import json
-from dataclasses_json import dataclass_json
+#from dataclasses_json import dataclass_json
 
 
-@dataclass_json # <-- this injects to_dict/from_dict and to_json/from_json
-@dataclass
-class Node:
-    title: str
-    target: str
-    #log: str
-
-nodes: List[Node] = []
-
-@dataclass_json
-@dataclass
-class Task:
-    type: str
-    log: str
-
-tasks: List[Task] = []
+# @dataclass_json # <-- this injects to_dict/from_dict and to_json/from_json
+# @dataclass
+# class Node:
+#     title: str
+#     target: str
+#     #log: str
+#
+# nodes: List[Node] = []
+#
+# @dataclass_json
+# @dataclass
+# class Task:
+#     type: str
+#     log: str
+#
+# tasks: List[Task] = []
 
 # Usage: save_data("nodes.json", nodes)
 def save_data(filename, data):

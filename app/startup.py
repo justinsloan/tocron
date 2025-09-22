@@ -21,7 +21,7 @@ def startup():
         # Menu
         with ui.button(icon='menu').classes('mr-1 bg-transparent').style(_glass):
             with ui.menu() as menu:
-                ui.menu_item('Ping Card', lambda: add_ping_card(container=main_body))
+                ui.menu_item('Ping Card', lambda: add_active_node(container=main_body))
                 ui.menu_item('Do Something...', lambda: ui.notify('Selected item 2'))
                 ui.separator()
                 ui.menu_item('Show Nodes List', lambda: left_drawer.set_value(True))
@@ -34,7 +34,7 @@ def startup():
                     ui.icon('contact_support').classes('m-0 p-0 text-2xl')
                     ui.menu_item('Support', lambda: footer.toggle)
                 ui.menu_item('Quit', lambda: shutdown())
-        ui.button(icon='add', on_click=lambda: add_ping_card(container=main_body)).classes('bg-transparent').style(_glass)
+        ui.button(icon='add', on_click=lambda: add_active_node(container=main_body)).classes('bg-transparent').style(_glass)
 
         # Center-ish
         ui.space()
@@ -66,13 +66,15 @@ def startup():
     # ------------------------------------------------------------
     # Left Drawer:
     # ------------------------------------------------------------
-    with ui.left_drawer().classes('ml-2 mt-4 bg-gray-900/60') \
+    left_drawer = ui.left_drawer().classes('ml-2 mt-4 bg-gray-900/60') \
                          .style(_glass) \
-                         .props('flat no-shadow bg-green') as left_drawer:
+                         .props('flat no-shadow bg-green')
+    with left_drawer:
         # Header
         with ui.row().classes('items-center'):
             ui.button(icon='keyboard_arrow_left', on_click=lambda: left_drawer.set_value(False)).tooltip('Close drawer').props('flat no-shadow')
             ui.label('Nodes List')
+        inactive_nodes = ui.element('div').classes('flex size-full gap-1.5')
 
     # ------------------------------------------------------------
     # Right Drawer:
@@ -93,18 +95,27 @@ def startup():
         loaded_nodes: List[Node] = [Node.from_dict(d) for d in raw_data]
 
         for node in loaded_nodes:
-            add_ping_card(title=node.title, target=node.target, container=main_body)
+            add_active_node(title=node.title, target=node.target, container=main_body)
     except:
-        add_ping_card(target='localhost', container=main_body)
+        add_active_node(target='localhost', container=main_body)
+        add_inactive_node(target='localhost', container=left_drawer)
+        left_drawer.update()
 
 # can we use one handler to add all card types?
 # this way we only need one function instead of a func per type.
 # DNS (lookup, MX, TXT, etc.), cURL, Python, SH cards
-def add_ping_card(container: ui.element, title='', target=''):
+def add_active_node(container: ui.element, title='', target=''):
     if not target:
         target = 'localhost'
         title  = 'localhost'
     PingCard(title=title, target=target, interval=60, container=container)
+    container.update()
+
+def add_inactive_node(container: ui.element, title='', target=''):
+    if not target:
+        target = 'localhost'
+        title  = 'localhost'
+    PingCard(title=title, target=target, interval=60, container=container, start_active=False)
     container.update()
 
 def save_config():

@@ -17,12 +17,14 @@ from app.class_Registry import *
 
 
 class PingCard(metaclass=Registry):
-    def __init__(self, title: str, target: str, container: ui.element, interval=60):
+    def __init__(self, title: str, target: str, container: ui.element, interval=60, start_active=True):
         # instantiate variables
+        self.container = container
         self.interval = interval
         self.ping_history = []
         self.target = ''
         self.result = ''
+        self.active = ''
         self.in_trash = 'false' # <-- str, not bool
 
         # styles
@@ -31,8 +33,10 @@ class PingCard(metaclass=Registry):
 
         # creates timer and performs initial ping
         self.timer = ui.timer(interval=self.interval, callback=lambda: asyncio.create_task(self.ping()))
+        if not start_active:
+            self.timer.active = False
 
-        with container:
+        with self.container:
             self.card = ui.card().classes('m-2 w-full sm:max-w-56 break-inside-avoid').style(self._glass)
             with self.card:
                 self.title = ui.label(title).classes('m-2 ml-3 text-xl font-bold')
@@ -79,9 +83,10 @@ class PingCard(metaclass=Registry):
 
         with ui.input('Target') as self.target_input:
             self.target_input.set_value(self.target.text)
+            self.target_input.on('update:model-value', lambda e: asyncio.create_task(self.ping(self.target_input.value)))
             with self.target_input.add_slot('append'):
-                self.target_status_icon = ui.icon('network_ping').on('click', lambda: asyncio.create_task(self.ping(self.target_input.value))).classes('cursor-pointer text-green')
-                #ui.icon.on('click', lambda: asyncio.create_task(self.ping()))
+                self.target_status_icon = ui.icon('network_ping') \
+                                          .on('click', lambda e: asyncio.create_task(self.ping(self.target_input.value))).classes('cursor-pointer')
 
         ui.switch('Monitor').props('color=grey').bind_value_to(self.timer, 'active').set_value(True)
 
@@ -100,12 +105,10 @@ class PingCard(metaclass=Registry):
             self.front.set_visibility(False)
             self.back.set_visibility(True)
             self.set_background('bg-black/30')
-            self.timer.active = False
         else:
             # flip to front
             self.front.set_visibility(True)
             self.back.set_visibility(False)
-            self.timer.active = True
 
     def show_chart(self):
         if self.chart_div.visible:
@@ -163,6 +166,7 @@ class PingCard(metaclass=Registry):
 
     def _get_properties(self):
         values = dict(type = 'ping',
+                      active = self.timer.active,
                       title = self.title.text,
                       target = self.target.text,
                       trash = self.in_trash)
@@ -180,6 +184,8 @@ class PingCard(metaclass=Registry):
         )
 
     async def ping(self, target=''):
+        if not self.timer.active: return # do nothing when switched off
+
         if not target:
             target = self.target.text
 
