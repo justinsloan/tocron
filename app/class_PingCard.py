@@ -25,7 +25,7 @@ class PingCard(metaclass=Registry):
         self.target = ''
         self.result = ''
         self.active = ''
-        self.in_trash = 'false' # <-- str, not bool
+        self.in_trash = False
 
         # styles
         self._glass = 'backdrop-filter: blur(12px) saturate(165%); -webkit-backdrop-filter: blur(12px) saturate(165%); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.125);'
@@ -161,14 +161,14 @@ class PingCard(metaclass=Registry):
 
     def trash(self):
         self.timer.cancel()
-        self.in_trash = 'true' # <-- str, not bool
+        self.in_trash = True
         self.card.delete()
 
     def _get_properties(self):
-        values = dict(type = 'ping',
-                      active = self.timer.active,
+        values = dict(active = self.timer.active,
                       title = self.title.text,
                       target = self.target.text,
+                      inverval = self.interval,
                       trash = self.in_trash)
         return values
 

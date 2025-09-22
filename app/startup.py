@@ -84,6 +84,7 @@ def startup():
         with ui.row().classes('items-center justify-items-end'):
             ui.label('Pending Tasks')
             ui.button(icon='keyboard_arrow_right', on_click=lambda: right_drawer.set_value(False)).tooltip('Close drawer').props('flat no-shadow')
+    right_drawer.set_value(False)
 
     # ------------------------------------------------------------
     # Main Body: All card classes should be contained in main_body
@@ -95,11 +96,18 @@ def startup():
         loaded_nodes: List[Node] = [Node.from_dict(d) for d in raw_data]
 
         for node in loaded_nodes:
-            add_active_node(title=node.title, target=node.target, container=main_body)
+            if node.active == True:
+                add_active_node(title=node.title,
+                                target=node.target,
+                                container=main_body)
+            else:
+                add_inactive_node(title=node.title,
+                                  target=node.target,
+                                  container=left_drawer)
     except:
         add_active_node(target='localhost', container=main_body)
-        add_inactive_node(target='localhost', container=left_drawer)
-        left_drawer.update()
+
+    left_drawer.update()
 
 # can we use one handler to add all card types?
 # this way we only need one function instead of a func per type.
