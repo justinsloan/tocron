@@ -74,7 +74,7 @@ def startup():
         with ui.row().classes('items-center'):
             ui.button(icon='keyboard_arrow_left', on_click=lambda: left_drawer.set_value(False)).tooltip('Close drawer').props('flat no-shadow')
             ui.label('Nodes List')
-        inactive_nodes = ui.element('div').classes('flex size-full gap-1.5')
+        #inactive_nodes = ui.element('div').classes('flex size-full gap-1.5')
 
     # ------------------------------------------------------------
     # Right Drawer:

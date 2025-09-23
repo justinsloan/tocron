@@ -56,6 +56,7 @@ class PingCard(metaclass=Registry):
         self.target = ui.label(target)
         self.result = ui.label('0 ms')
 
+        # need to fix how the chart displays; getting cut off by the parent element
         with ui.element('div') as self.chart_div, ui.card():
             self.chart_div.set_visibility(False)
             self.chart_div.classes('mx-auto justify-center rounded-lg').style(self._glass)
@@ -86,10 +87,19 @@ class PingCard(metaclass=Registry):
             self.target_input.on('update:model-value', lambda e: asyncio.create_task(self.ping(self.target_input.value)))
             with self.target_input.add_slot('append'):
                 self.target_status_icon = ui.icon('network_ping') \
-                                          .on('click', lambda e: asyncio.create_task(self.ping(self.target_input.value))).classes('cursor-pointer')
+                                          .on('click', lambda e: asyncio.create_task(self.ping(self.target_input.value))) \
+                                          .classes('cursor-pointer')
 
-        ui.switch('Monitor').props('color=grey').bind_value_to(self.timer, 'active').set_value(True)
+        with ui.row().classes('items-center'):
+            ui.switch('Monitor').props('color=grey') \
+                                .bind_value_to(self.timer, 'active').set_value(True)
+            ui.space()
+            ui.icon('update').classes('m-o p-0 items-center text-2xl')
+            ui.number(label='Seconds', value=self.timer.interval,
+                      on_change=lambda e: setattr(self.timer, 'interval', int(e.value))) \
+                      .classes(' m-0 p-0 w-12').props('borderless')
 
+        # More Options
         with ui.expansion('More Options').classes('mb-2').style(self._glass):
             title_checkbox = ui.checkbox('Show card title').classes('pr-2').style(self._glass)
             title_checkbox.set_value(True)
@@ -135,6 +145,9 @@ class PingCard(metaclass=Registry):
         else:
             self.card.classes(replace=classes)
 
+    def set_interval(self):
+        pass
+
     def fingerprint(self):
         # this should be an async process in helper_functions
         registrar, expiration = check_registrar(self.target.text)
@@ -168,7 +181,7 @@ class PingCard(metaclass=Registry):
         values = dict(active = self.timer.active,
                       title = self.title.text,
                       target = self.target.text,
-                      inverval = self.interval,
+                      interval = self.interval,
                       trash = self.in_trash)
         return values
 
