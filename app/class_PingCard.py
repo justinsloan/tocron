@@ -17,11 +17,9 @@ from app.class_Registry import *
 
 
 class PingCard(metaclass=Registry):
-    #@@ def __init__(self, title: str, target: str, container: ui.element, interval=60, start_active=True):
-    def __init__(self, title: str, target: str, main_container: ui.element, drawer_container: ui.element, interval=60,
+    def __init__(self, title: str, target: str, main_container: ui.element, drawer_container: ui.element, interval=120,
                  start_active=True):
         # instantiate variables
-        #@@ self.container = container
         self.main_container = main_container
         self.drawer_container = drawer_container
         self.interval = interval
@@ -36,56 +34,31 @@ class PingCard(metaclass=Registry):
         _card_classes = 'm-3 p-0'
 
         # creates timer and performs initial ping
-        self.timer = ui.timer(interval=self.interval, callback=lambda: asyncio.create_task(self.ping()))
-        self.timer.active = start_active
+        self.timer = ui.timer(interval=self.interval,
+                              active=start_active,
+                              callback=lambda: asyncio.create_task(self.ping()))
+
+        container = self.main_container if start_active else self.drawer_container
+        with container:
+            self.card = ui.card().classes('w-full sm:max-w-56 break-inside-avoid').style(self._glass)
+            with self.card:
+                self.title = ui.label(title).classes('m-2 ml-3 text-xl font-bold')
+                self.front = ui.card_section().classes(_card_classes)
+                with self.front:
+                    self.card_front(target)
+
+                self.back = ui.card_section().classes(_card_classes)
+                self.back.set_visibility(False)
+                with self.back:
+                    self.card_back()
+
+                self.inactive = ui.card_section().classes(_card_classes)
+                self.inactive.set_visibility(False)
+                with self.inactive:
+                    self.card_inactive()
 
         if not start_active:
-            container = self.drawer_container
-            with container:
-                self.card = ui.card().classes('m-2 w-full sm:max-w-56 break-inside-avoid').style(self._glass)
-                with self.card:
-                    self.title = ui.label(title).classes('m-2 ml-3 text-xl font-bold')
-                    self.front = ui.card_section().classes(_card_classes)
-                    with self.front:
-                        self.card_front(target)
-
-                    self.back = ui.card_section().classes(_card_classes)
-                    self.back.set_visibility(False)
-                    with self.back:
-                        self.card_back()
-
-                    self.inactive = ui.card_section().classes(_card_classes)
-                    self.inactive.set_visibility(False)
-                    with self.inactive:
-                        with ui.row():
-                            ui.switch().bind_value_to(self.timer, 'active') \
-                                       .on('change', self._handle_activation_change)
-
             self._handle_activation_change()
-        else:
-            container = self.main_container
-            self.timer.activate()
-            with container:
-                self.card = ui.card().classes('m-2 w-full sm:max-w-56 break-inside-avoid').style(self._glass)
-                with self.card:
-                    self.title = ui.label(title).classes('m-2 ml-3 text-xl font-bold')
-                    self.front = ui.card_section().classes(_card_classes)
-                    with self.front:
-                        self.card_front(target)
-
-                    self.back = ui.card_section().classes(_card_classes)
-                    self.back.set_visibility(False)
-                    with self.back:
-                        self.card_back()
-
-                    self.inactive = ui.card_section().classes(_card_classes)
-                    self.inactive.set_visibility(False)
-                    with self.inactive:
-                        with ui.row():
-                            #self.title_checkbox.set_value(False)
-                            ui.label(self.title.text).classes('m-2 ml-3 text-xl font-bold')
-                            ui.switch().bind_value_to(self.timer, 'active') \
-                                       .on('change', self._handle_activation_change)
 
     def card_front(self, target: str):
         _button_props = 'flat no-shadow'
@@ -129,8 +102,8 @@ class PingCard(metaclass=Registry):
                                           .classes('cursor-pointer')
 
         with ui.row().classes('items-center'):
-            ui.switch('Monitor').on('change', self._handle_activation_change).props('color=grey') \
-                                .bind_value_to(self.timer, 'active')#@@ .set_value(self.timer.active)
+            ui.switch('Monitor').on('change', self._handle_activation_change).props('color=green') \
+                                .bind_value(self.timer, 'active').set_value(self.timer.active)
             ui.space()
             ui.icon('update').classes('m-o p-0 items-center text-2xl')
             ui.number(label='Seconds', value=self.timer.interval,
@@ -148,9 +121,9 @@ class PingCard(metaclass=Registry):
         ui.button(icon='save', on_click=self.save_settings).props('flat no-shadow').classes('text-xs').style(self._glass)
 
     def card_inactive(self):
-        self.front.set_visibility(False)
-        self.back.set_visibility(False)
-        self.inactive.set_visibility(True)
+        with ui.row().classes('items-center'):
+            self.inactive_title = ui.label(self.title.text).classes('m-2 ml-3 text-xl font-bold')
+            ui.switch(on_change=self._handle_activation_change).bind_value(self.timer, 'active')
 
     def flip_card(self):
         if self.front.visible:
@@ -175,6 +148,7 @@ class PingCard(metaclass=Registry):
     def save_settings(self):
             self.flip_card()
             self.title.set_text(self.title_input.value)
+            self.inactive_title.set_text(self.title_input.value)
             self.set_target(self.target_input.value)
 
     def set_target(self, new_target: str) -> None:
@@ -219,10 +193,20 @@ class PingCard(metaclass=Registry):
 
     def _handle_activation_change(self):
         if self.timer.active:
+            # Show active card
+            asyncio.create_task(self.ping())
             self.card.move(self.main_container)
+            self.front.set_visibility(True)
+            self.back.set_visibility(False)
+            self.title.set_visibility(self.title_checkbox.value)
+            self.inactive.set_visibility(False)
         else:
-            self.card_inactive()
+            # Show inactive card
             self.card.move(self.drawer_container)
+            self.front.set_visibility(False)
+            self.back.set_visibility(False)
+            self.title.set_visibility(False)
+            self.inactive.set_visibility(True)
 
 
     def _get_properties(self):

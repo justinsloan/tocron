@@ -42,3 +42,6 @@ def get_country_from_ip(ip_address: str):
         return country_code
     except requests.exceptions.RequestException as e:
         return 'Unknown'
+
+
+
