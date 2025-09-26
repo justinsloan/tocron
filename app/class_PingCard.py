@@ -3,8 +3,8 @@ import asyncio
 import subprocess
 import dns.resolver
 from nicegui import ui
-from app.helper_functions import *
-from app.class_Registry import *
+from app.helper_functions import check_registrar, get_country_from_ip, is_valid_hostname_or_ip
+from app.class_Registry import Registry
 
 
 #--------------------------------------------------------------------
@@ -122,7 +122,8 @@ class PingCard(metaclass=Registry):
 
     def card_inactive(self):
         with ui.row().classes('items-center'):
-            self.inactive_title = ui.label(self.title.text).classes('m-2 ml-3 text-xl font-bold')
+            self.inactive_title = ui.label(self.title.text).classes('m-2 ml-3 text-sm font-bold')
+            ui.space()
             ui.switch(on_change=self._handle_activation_change).bind_value(self.timer, 'active')
 
     def flip_card(self):
@@ -152,7 +153,10 @@ class PingCard(metaclass=Registry):
             self.set_target(self.target_input.value)
 
     def set_target(self, new_target: str) -> None:
-        """Changes the ping target."""
+        """Changes the ping target after validation."""
+        if not is_valid_hostname_or_ip(new_target):
+            ui.notify('Invalid target. Please enter a valid hostname or IP address.', color='warning')
+            return
         self.target.set_text(new_target)
         asyncio.create_task(self.ping())
 
@@ -163,22 +167,34 @@ class PingCard(metaclass=Registry):
             self.card.classes(replace=classes)
 
     def fingerprint(self):
-        # this should be an async process in helper_functions
-        registrar, expiration = check_registrar(self.target.text)
-        query = dns.resolver.resolve(self.target.text)
+        # Validate target before performing external lookups
+        target = self.target.text
+        if not is_valid_hostname_or_ip(target):
+            ui.notify('Invalid target for fingerprinting.', color='warning')
+            return
+
+        # WHOIS lookup (safe wrapper already handles exceptions)
+        registrar, expiration = check_registrar(target)
+
+        # DNS resolution with limited lifetime and exception handling
+        ips = []
+        try:
+            answers = dns.resolver.resolve(target, lifetime=3)
+            ips = [ip.to_text() for ip in answers]
+        except Exception:
+            ips = []
 
         with ui.dialog() as dialog, ui.card().classes('p-3').style(self._glass):
             with ui.row().classes('items-center p-0 m-0').style(self._glass):
                 ui.icon('fingerprint').classes('m-0 pb-2 pl-2 pt-2 text-3xl')
-                ui.label(self.target.text).classes('m-0 pr-2 text-xl')
+                ui.label(target).classes('m-0 pr-2 text-xl')
 
             with ui.row().classes('pl-1'):
                 ui.label('Registrar: ' + registrar)
                 ui.label('Expiration: ' + expiration)
-                for ip in query:
-                    ip_addr = ip.to_text()
+                for ip_addr in ips:
                     country = get_country_from_ip(ip_addr)
-                    if country:
+                    if country and country != 'Unknown':
                         ui.label('IP: ' + ip_addr + f' [{country}]')
                     else:
                         ui.label('IP: ' + ip_addr)
@@ -188,14 +204,38 @@ class PingCard(metaclass=Registry):
 
     def trash(self):
         self.timer.cancel()
-        self.in_trash = True
+        self.in_trash = True # <-- Prevents class instance from being saved to disk
         self.card.delete()
+
+    # def _apply_card_styling(self):
+    #     """Applies classes and style to self.card based on active state and current background."""
+    #     base_classes = 'w-full break-inside-avoid'
+    #     active_width_class = 'sm:max-w-56'  # Specific to active state
+    #
+    #     current_card_style = ''
+    #     current_card_classes = base_classes
+    #
+    #     if self.timer.active:
+    #         # When active: apply max-w, _glass style, and current background
+    #         current_card_classes = f'{base_classes} {active_width_class} {self._current_background_class}'
+    #         current_card_style = self._glass
+    #     else:
+    #         # When inactive: only base_classes, no max-w, no _glass style (explicitly unset), no background
+    #         # Add a margin for cards in the drawer
+    #         current_card_classes = f'{base_classes} m-1'  # Added m-1 for margin
+    #         # Explicitly unset properties from _glass style when inactive
+    #         current_card_style = 'backdrop-filter: none; -webkit-backdrop-filter: none; border-radius: 0; border: none;'
+    #         self._current_background_class = ''  # Ensure background is clear when inactive
+    #
+    #     self.card.classes(replace=current_card_classes.strip())
+    #     self.card.style(current_card_style)
 
     def _handle_activation_change(self):
         if self.timer.active:
             # Show active card
             asyncio.create_task(self.ping())
             self.card.move(self.main_container)
+            self.card.classes(replace='w-full sm:max-w-56 break-inside-avoid')  # Add sm:max-w-56 for main container
             self.front.set_visibility(True)
             self.back.set_visibility(False)
             self.title.set_visibility(self.title_checkbox.value)
@@ -203,11 +243,11 @@ class PingCard(metaclass=Registry):
         else:
             # Show inactive card
             self.card.move(self.drawer_container)
+            self.card.classes(replace='w-full break-inside-avoid mb-30')  # Remove sm:max-w-56 for drawer container
             self.front.set_visibility(False)
             self.back.set_visibility(False)
             self.title.set_visibility(False)
             self.inactive.set_visibility(True)
-
 
     def _get_properties(self):
         values = dict(active = self.timer.active,
@@ -225,14 +265,27 @@ class PingCard(metaclass=Registry):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None,
-            lambda: subprocess.run(['ping', '-c', '1', f'{target}'], capture_output=True, text=True)
+            lambda: subprocess.run(
+                ['ping', '-c', '1', target],
+                capture_output=True,
+                text=True,
+                timeout=4
+            )
         )
 
     async def ping(self, target=''):
-        if not self.timer.active: return # do nothing when switched off
+        if not self.timer.active:
+            return  # do nothing when switched off
 
         if not target:
             target = self.target.text
+
+        # Validate target to prevent command injection and invalid inputs
+        if not is_valid_hostname_or_ip(str(target)):
+            self.result.set_text('Invalid target')
+            self.set_background('bg-yellow-300/20')
+            self.target_status_icon.classes(replace='text-yellow')
+            return
 
         try:
             response = await asyncio.wait_for(self.sh_ping(target), timeout=5)
@@ -241,11 +294,18 @@ class PingCard(metaclass=Registry):
             self.set_background('bg-yellow-300/20')
             self.target_status_icon.classes(replace='text-yellow')
             return
+        except Exception:
+            self.result.set_text('Ping error')
+            self.set_background('bg-red-500/20')
+            self.target_status_icon.classes(replace='text-red')
+            return
 
-        match = re.search(r'(\d+)(?: packets)? received', response.stdout)
+        # Only work with a bounded portion of stdout to avoid excessive processing
+        stdout = '\n'.join(response.stdout.splitlines()[-5:])
+        match = re.search(r'(\d+)(?: packets)? received', stdout)
 
         if not match:
-            self.result.set_text(response.stderr)
+            self.result.set_text('Ping error')
             self.set_background('bg-red-500/20')
             self.target_status_icon.classes(replace='text-red')
         else:
@@ -254,29 +314,29 @@ class PingCard(metaclass=Registry):
                 self.set_background('bg-red-500/20')
                 self.target_status_icon.classes(replace='text-red')
             else:
-                line = response.stdout.splitlines()[-1]              # example: round-trip min/avg/max/stddev = 45/60/67/0.000 ms
-                numerical_part = line.split('=')[1].strip()          # split on '=' to get just '45/60/67/0.000 ms'
-                parts = numerical_part.replace(' ms', '').split('/') # split on '/' to get a list of [45, 60, 67, 0]
+                # Attempt to parse latency safely
+                try:
+                    line = stdout.splitlines()[-1]
+                    numerical_part = line.split('=')[1].strip()
+                    parts = numerical_part.replace(' ms', '').split('/')
+                except Exception:
+                    parts = []
 
-                if parts:
+                if parts and len(parts) >= 3:
                     min_val = parts[0]
                     avg_val = parts[1]
                     max_val = parts[2]
-                    #mdev_val = match.group(4)
 
-                    speed = {
-                        'min': min_val,
-                        'avg': avg_val,
-                        'max': max_val
-                        #'mdev': mdev_val
-                    }
-
-                    self.result.set_text(str(speed['avg']) + ' ms')
+                    self.result.set_text(str(avg_val) + ' ms')
                     self.set_background('bg-green-500/20')
                     self.target_status_icon.classes(replace='text-green')
                     self.ping_history.append(avg_val)
+                    # Keep only the most recent 100 samples to avoid unbounded growth
+                    if len(self.ping_history) > 100:
+                        self.ping_history[:] = self.ping_history[-100:]
                     if self.chart_div.visible:
                         self.ping_chart.update()
                 else:
-                    self.result.set_text('Red: String parse error')
+                    self.result.set_text('Yellow: Parse error')
+                    self.set_background('bg-yellow-300/20')
                     self.target_status_icon.classes(replace='text-yellow')

@@ -1,12 +1,10 @@
 import logging
-import subprocess
 from nicegui import ui
-from pathlib import Path
 
-#from app.helper_functions import *
-from app.local_dataclasses import *
-from app.class_Registry import *
-from app.class_PingCard import *
+from typing import List
+from app.local_dataclasses import Node, load_data, save_data
+from app.class_Registry import Registry
+from app.class_PingCard import PingCard
 
 # DNS (lookup, MX, TXT, etc.), cURL, Python, SH cards
 
@@ -71,7 +69,7 @@ def startup():
     # ------------------------------------------------------------
     # Left Drawer:
     # ------------------------------------------------------------
-    left_drawer = ui.left_drawer().classes('ml-2 mt-4 bg-gray-900/60') \
+    left_drawer = ui.left_drawer().classes('bg-gray-900/60') \
                          .style(_glass) \
                          .props('flat no-shadow bg-green')
     with left_drawer:
@@ -86,12 +84,12 @@ def startup():
         # Container for PingCard instances in the left drawer
         with ui.scroll_area().classes('w-full h-full'):
             left_drawer_card_container = ui.element('div').classes(
-                                         'flex flex-col mb-5 items-center w-full')
+                                         'flex flex-col items-center w-full')
 
     # ------------------------------------------------------------
     # Right Drawer:
     # ------------------------------------------------------------
-    with ui.right_drawer().classes('mr-2 mt-4 bg-gray-900/60').style(_glass) as right_drawer:
+    with ui.right_drawer().classes('gap-1.5 bg-gray-900/60').style(_glass) as right_drawer:
         # Header
         with ui.row().classes('w-full items-center justify-items-end'):
             ui.label('Pending Tasks')

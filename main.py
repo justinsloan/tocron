@@ -15,6 +15,6 @@ if __name__ in {"__main__", "__mp_main__"}:
     ui.run(title="ANCHOR",
            port=native.find_open_port(),
            favicon='⚓',
-           #native=True,
+           native=True,
            #reload=False,
            )
