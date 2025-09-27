@@ -26,6 +26,8 @@ CAMEO - Command, Administration, Monitoring, Execution & Oversight
 
 ANCHOR - Administrative Network Command Hub for Operations & Response
 
+CILVER - Critical Infrastructure Logistics, Visibility, and Endpoint Response
+
 Card-based interface. Tools to ping, dig, curl, etc. Ability to run arbitrary Python scripts.
 
 Nodes and Tasks

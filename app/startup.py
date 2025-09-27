@@ -16,37 +16,37 @@ def startup():
     # ------------------------------------------------------------
     # Header Row
     # ------------------------------------------------------------
-    with ui.header().classes(replace='row items-center m-2 pl-5 pr-5 dark:bg-gray-900').style(_glass) as header:
-        # Menu
-        with ui.button(icon='menu').classes('mr-1 bg-transparent').style(_glass):
-            with ui.menu() as menu:
-                ui.menu_item('New Node...', lambda: add_ping_card(main_container=main_body, drawer_container=left_drawer))
-                #ui.menu_item('Do Something...', lambda: ui.notify('Selected item 2'))
-                ui.separator()
-                ui.menu_item('Show Nodes List', lambda: left_drawer.set_value(True))
-                ui.menu_item('Show Pending Tasks', lambda: right_drawer.set_value(True))
-                ui.menu_item('Sort Nodes Alphabetically', lambda: sort_cards())
-                ui.separator()
-                ui.menu_item('Save Config', lambda: save_config())
-                #ui.menu_item('Keep Menu Open After Click', lambda: ui.notify('Keep Menu Open'), auto_close=False)
-                ui.separator()
-                with ui.row().classes('m-0 p-0 justify-center items-center'):
-                    ui.icon('contact_support').classes('m-0 p-0 text-2xl')
-                    ui.menu_item('Support', lambda: footer.toggle)
-                ui.menu_item('Quit', lambda: shutdown())
-
-        ui.button(icon='add',
-                  on_click=lambda: add_ping_card(main_container=main_body, drawer_container=left_drawer)) \
-                  .classes('bg-transparent').style(_glass)
-
-        # Center-ish
-        ui.space()
-        ui.label('⚓ ANCHOR').classes('p-1 pl-2 pr-2 m-1 text-xl font-mono') \
-                            .tooltip('Administrative Network Command Hub for Operations & Response')
-
-        # Right
-        ui.space()
-        ui.switch().bind_value(dark_mode).props('color=grey')
+    # with ui.header().classes(replace='row items-center m-2 pl-5 pr-5 dark:bg-gray-900').style(_glass) as header:
+    #     # Menu
+    #     with ui.button(icon='menu').classes('mr-1 bg-transparent').style(_glass):
+    #         with ui.menu() as menu:
+    #             ui.menu_item('New Node...', lambda: add_ping_card(main_container=main_body, drawer_container=left_drawer))
+    #             #ui.menu_item('Do Something...', lambda: ui.notify('Selected item 2'))
+    #             ui.separator()
+    #             ui.menu_item('Show Nodes List', lambda: left_drawer.set_value(True))
+    #             ui.menu_item('Show Pending Tasks', lambda: right_drawer.set_value(True))
+    #             ui.menu_item('Sort Nodes Alphabetically', lambda: sort_cards())
+    #             ui.separator()
+    #             ui.menu_item('Save Config', lambda: save_config())
+    #             #ui.menu_item('Keep Menu Open After Click', lambda: ui.notify('Keep Menu Open'), auto_close=False)
+    #             ui.separator()
+    #             with ui.row().classes('m-0 p-0 justify-center items-center'):
+    #                 ui.icon('contact_support').classes('m-0 p-0 text-2xl')
+    #                 ui.menu_item('Support', lambda: footer.toggle)
+    #             ui.menu_item('Quit', lambda: shutdown())
+    #
+    #     ui.button(icon='add',
+    #               on_click=lambda: add_ping_card(main_container=main_body, drawer_container=left_drawer)) \
+    #               .classes('bg-transparent').style(_glass)
+    #
+    #     # Center-ish
+    #     ui.space()
+    #     ui.label('⚓ ANCHOR').classes('p-1 pl-2 pr-2 m-1 text-xl font-mono') \
+    #                         .tooltip('Administrative Network Command Hub for Operations & Response')
+    #
+    #     # Right
+    #     ui.space()
+    #     ui.switch().bind_value(dark_mode).props('color=grey')
 
     # ------------------------------------------------------------
     # Footer
@@ -69,22 +69,42 @@ def startup():
     # ------------------------------------------------------------
     # Left Drawer:
     # ------------------------------------------------------------
-    left_drawer = ui.left_drawer().classes('bg-gray-900/60') \
-                         .style(_glass) \
-                         .props('flat no-shadow bg-green')
+    left_drawer = ui.left_drawer()
     with left_drawer:
-        # Header
-        with ui.row().classes('w-full items-center'):
-            ui.button(icon='keyboard_arrow_left', on_click=lambda: left_drawer.set_value(False)).tooltip('Close drawer').props('flat no-shadow')
-            ui.label('Nodes List')
+        # Toolbar ----------------------------------------------------
+        with ui.element('div').classes(replace='row w-full items-center dark:bg-gray-900').style(_glass):# as toolbar:
+            # Menu
+            with ui.button(icon='menu').classes('m-1 text-white bg-transparent').props('flat no-shadow'):
+                with ui.menu() as menu:
+                    ui.menu_item('New Node...',
+                                 lambda: add_ping_card(main_container=main_body, drawer_container=left_drawer_card_container))
+                    # ui.menu_item('Do Something...', lambda: ui.notify('Selected item 2'))
+                    ui.separator()
+                    #ui.menu_item('Show Nodes List', lambda: left_drawer.set_value(True))
+                    ui.menu_item('Show Pending Tasks', lambda: right_drawer.set_value(True))
+                    ui.menu_item('Sort Nodes Alphabetically', lambda: sort_cards())
+                    ui.separator()
+                    ui.menu_item('Save Config', lambda: save_config())
+                    # ui.menu_item('Keep Menu Open After Click', lambda: ui.notify('Keep Menu Open'), auto_close=False)
+                    ui.separator()
+                    with ui.row().classes('m-0 p-0 justify-center items-center'):
+                        ui.icon('contact_support').classes('m-0 p-0 text-2xl')
+                        ui.menu_item('Support', lambda: footer.toggle)
+                    ui.menu_item('Quit', lambda: shutdown())
+
+            ui.button(icon='add',
+                      on_click=lambda: add_ping_card(main_container=main_body, drawer_container=left_drawer_card_container)) \
+                      .classes('text-white p-1 bg-transparent').props('flat no-shadow')#.style(_glass)
             ui.space()
             ui.button(icon='search', on_click=lambda: ui.notify('left search clicked')) \
-                .classes('text-white p-0').props('flat no-shadow')
+                      .classes('text-white p-1 m-1').props('flat no-shadow')
+        # ------------------------------------------------------------
 
-        # Container for PingCard instances in the left drawer
-        with ui.scroll_area().classes('w-full h-full'):
+        # Scroll Area ------------------------------------------------
+        with ui.scroll_area().classes('m-0 p-0 w-full h-full').style(_glass):
             left_drawer_card_container = ui.element('div').classes(
                                          'flex flex-col items-center w-full')
+        # ------------------------------------------------------------
 
     # ------------------------------------------------------------
     # Right Drawer:

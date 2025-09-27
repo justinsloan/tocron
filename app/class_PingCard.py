@@ -67,21 +67,22 @@ class PingCard(metaclass=Registry):
         self.target = ui.label(target)
         self.result = ui.label('0 ms')
 
-        # need to fix how the chart displays; getting cut off by the parent element
-        with ui.element('div') as self.chart_div, ui.card():
+        with ui.element('div') as self.chart_div:
             self.chart_div.set_visibility(False)
-            self.chart_div.classes('mx-auto justify-center rounded-lg').style(self._glass)
+            self.chart_div.classes('w-full justify-center rounded-lg').style(self._glass)
             self.ping_chart = ui.echart({
                 'xAxis': {'type': 'category', 'show': False},
-                'yAxis': {'type': 'value', 'name': 'Response Time (ms)'},
-                'grid': {'show': False},
+                'yAxis': {'type': 'value', 'name': 'Time (ms)'},
+                'grid': {'show': False, 'containLabel': True},
                 'series': [{'type': 'line', 'data': self.ping_history}],
+                'width': '85%',  # Added to make the chart fill the container width
+                'height': '70%',  # Added to make the chart fill the container height
             }, theme={'color': ['#b687ac', '#28738a', '#a78f8f'],
                       'backgroundColor': '#1d1d1d',
-            }, on_point_click=ui.notify,
-            ).on('click', lambda: self.ping_chart.update())
+                      }, on_point_click=ui.notify,
+            ).classes('w-full flex').on('click', lambda: self.ping_chart.update())
 
-        with ui.row().classes('mt-1 p-0 w-full'): #.style(self._glass):
+        with ui.row().classes('mt-1 p-0 w-full'):
             ui.button(icon='network_ping', on_click=lambda: asyncio.create_task(self.ping())).props(_button_props).classes(
                 _button_classes)
             ui.button(icon='bar_chart', on_click=self.show_chart).props(_button_props).classes(_button_classes)
@@ -332,8 +333,8 @@ class PingCard(metaclass=Registry):
                     self.target_status_icon.classes(replace='text-green')
                     self.ping_history.append(avg_val)
                     # Keep only the most recent 100 samples to avoid unbounded growth
-                    if len(self.ping_history) > 100:
-                        self.ping_history[:] = self.ping_history[-100:]
+                    if len(self.ping_history) > 30:
+                        self.ping_history[:] = self.ping_history[-30:]
                     if self.chart_div.visible:
                         self.ping_chart.update()
                 else:
