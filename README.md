@@ -15,6 +15,14 @@ An uptime status and monitoring tool with only 15 pieces of flare.
 
 ### Release 1
  - Improved fingerprinting
+ - `dig` command module
 
 ### Release 3
  - Categories for nodes
+ - `mtr` route tracing
+ - Basic website "defacement" monitoring (if the size of the file changed from last check, character count changes, character-by-character check, sha256 hash, these ideas only work for static sites...)
+
+### Future
+
+#### Health Check
+Run essential checks on public domains including DMARC, SPF, SSL validation, DNS propagation, etc.

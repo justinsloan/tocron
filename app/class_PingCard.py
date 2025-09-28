@@ -88,7 +88,7 @@ class PingCard(metaclass=Registry):
             ui.button(icon='bar_chart', on_click=self.show_chart).props(_button_props).classes(_button_classes)
             ui.button(icon='fingerprint', on_click=self.fingerprint).props(_button_props).classes(_button_classes)
             ui.space()
-            ui.button(icon='settings_applications', on_click=self.flip_card).props(_button_props).classes(_button_classes)
+            ui.button(icon='flip', on_click=self.flip_card).props(_button_props).classes(_button_classes)
 
     def card_back(self):
         with ui.input('Title') as self.title_input:
@@ -113,17 +113,19 @@ class PingCard(metaclass=Registry):
 
         # More Options
         with ui.expansion('More Options').classes('mb-2').style(self._glass):
-            self.title_checkbox = ui.checkbox('Show card title').classes('pr-2').style(self._glass)
+            self.title_checkbox = ui.checkbox('Show title').classes('pr-2 w-full').style(self._glass)
             self.title_checkbox.set_value(True)
             self.title.bind_visibility_from(self.title_checkbox, 'value')
             ui.label('Danger Zone').classes('text-xs text-red')
-            ui.button(icon='delete', on_click=self.trash).props('flat ').classes('text-xs text-red bg-red-100').style(self._glass)
+            ui.button(icon='delete', on_click=self.trash).props('flat ').classes('text-xs text-red').style(self._glass)
 
-        ui.button(icon='save', on_click=self.save_settings).props('flat no-shadow').classes('text-xs').style(self._glass)
+        with ui.row():
+            ui.space()
+            ui.button(icon='done', on_click=self.save_settings).props('flat no-shadow').classes('p-1 pl-2 pr-2 text-xs text-white').style(self._glass)
 
     def card_inactive(self):
-        with ui.row().classes('items-center'):
-            self.inactive_title = ui.label(self.title.text).classes('m-2 ml-3 text-sm font-bold')
+        with ui.row().classes('p-0 m-0 items-center w-full flex-nowrap'):
+            self.inactive_title = ui.label(self.title.text).classes('text-sm font-bold')
             ui.space()
             ui.switch(on_change=self._handle_activation_change).bind_value(self.timer, 'active')
 

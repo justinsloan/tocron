@@ -1,6 +1,16 @@
 # ANCHOR
 ## Administrative Network Command Hub for Operations & Response
 
+**CAMEO** - Command, Administration, Monitoring, Execution & Oversight
+
+**ANCHOR** - Administrative Network Command Hub for Operations & Response
+
+**CILVER** - Critical Infrastructure Logistics, Visibility, and Endpoint Response
+
+**CERVE** - Critical Endpoint Response and Visibility Engine
+
+**Kūmaka** - meaning "visible" in Hawaiian
+
 ## User Stories
 **Kori** is the IT Operations Manager for a mid-sized company with 10 geographically dispersed office locations. Each location has a firewall, server, switch, wifi access point, and several computer workstations with VoIP phones at each desk. Kori's primary role is to monitor network performance and make corrections when problems arise. If a server were to go down, for example, Kori needs to be notified quickly so the issue can be investigated and remediated.
 
@@ -22,12 +32,6 @@ To keep track of all this activity, Kori maintains a list of Nodes and a list of
  - log: admin notes and log of events
 
 ## Misc. Notes
-CAMEO - Command, Administration, Monitoring, Execution & Oversight
-
-ANCHOR - Administrative Network Command Hub for Operations & Response
-
-CILVER - Critical Infrastructure Logistics, Visibility, and Endpoint Response
-
 Card-based interface. Tools to ping, dig, curl, etc. Ability to run arbitrary Python scripts.
 
 Nodes and Tasks

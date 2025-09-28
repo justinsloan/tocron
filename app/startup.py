@@ -103,7 +103,7 @@ def startup():
         # Scroll Area ------------------------------------------------
         with ui.scroll_area().classes('m-0 p-0 w-full h-full').style(_glass):
             left_drawer_card_container = ui.element('div').classes(
-                                         'flex flex-col items-center w-full')
+                                         'flex flex-col gap-1.5 items-center w-full')
         # ------------------------------------------------------------
 
     # ------------------------------------------------------------
@@ -141,7 +141,7 @@ def startup():
         print(f"Error loading nodes: {e}")
         add_ping_card(main_container=main_body, drawer_container=left_drawer, target='localhost')
 
-def add_ping_card(main_container: ui.element, drawer_container: ui.element, title: str = '', target: str = '', interval: int = 55, start_active: bool = True):
+def add_ping_card(main_container: ui.element, drawer_container: ui.element, title: str = '', target: str = '', interval: int = 60, start_active: bool = True):
     if not target:
         target = 'localhost'
         title  = 'localhost'

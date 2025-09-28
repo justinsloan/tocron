@@ -1,7 +1,6 @@
 from nicegui import ui, app, native
 from app.startup import startup
 
-# CILVER: Critical Infrastructure Logistics, Visibility, and Endpoint Response
 
 app.on_startup(startup)
 
@@ -38,7 +37,7 @@ ui.add_head_html('''
 ''')
 
 if __name__ in {"__main__", "__mp_main__"}:
-    ui.run(title="ANCHOR",
+    ui.run(title="Kūmaka",
            port=native.find_open_port(),
            favicon='⚓',
            native=True,
