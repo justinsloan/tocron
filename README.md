@@ -26,3 +26,6 @@ An uptime status and monitoring tool with only 15 pieces of flare.
 
 #### Health Check
 Run essential checks on public domains including DMARC, SPF, SSL validation, DNS propagation, etc.
+
+#### Fingerprint
+FTP, SFTP, SSH, HTTP, HTTPS, SSL fingerprint (like GRC), SAMBA, WEBCal, WEBDav, SMTP, IMAP, 

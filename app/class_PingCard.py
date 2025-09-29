@@ -3,7 +3,7 @@ import asyncio
 import subprocess
 import dns.resolver
 from nicegui import ui
-from app.helper_functions import check_registrar, get_country_from_ip, is_valid_hostname_or_ip
+from app.helper_functions import *
 from app.class_Registry import Registry
 
 
@@ -42,7 +42,9 @@ class PingCard(metaclass=Registry):
         with container:
             self.card = ui.card().classes('w-full sm:max-w-56 break-inside-avoid').style(self._glass)
             with self.card:
-                self.title = ui.label(title).classes('m-2 ml-3 text-xl font-bold')
+                self.title = ui.label(title) \
+                             .classes('m-2 ml-3 text-xl font-bold')
+
                 self.front = ui.card_section().classes(_card_classes)
                 with self.front:
                     self.card_front(target)
@@ -64,12 +66,17 @@ class PingCard(metaclass=Registry):
         _button_props = 'flat no-shadow'
         _button_classes = 'text-xs text-white p-1'
 
-        self.target = ui.label(target)
-        self.result = ui.label('0 ms')
+        self.target = ui.label(target) \
+                      .on('click', lambda: open_url(self.target_input.value)) \
+                      .classes('cursor-pointer hover:text-blue-500')
+
+        self.result = ui.label('0 ms') \
+                      .on('click', lambda: self.show_chart()) \
+                      .classes('cursor-pointer hover:text-blue-500')
 
         with ui.element('div') as self.chart_div:
             self.chart_div.set_visibility(False)
-            self.chart_div.classes('w-full justify-center rounded-lg').style(self._glass)
+            self.chart_div.classes('w-full justify-center rounded-lg').style(self._glass + ' min-width: 100px;')
             self.ping_chart = ui.echart({
                 'xAxis': {'type': 'category', 'show': False},
                 'yAxis': {'type': 'value', 'name': 'Time (ms)'},
@@ -85,10 +92,10 @@ class PingCard(metaclass=Registry):
         with ui.row().classes('mt-1 p-0 w-full'):
             ui.button(icon='network_ping', on_click=lambda: asyncio.create_task(self.ping())).props(_button_props).classes(
                 _button_classes)
-            ui.button(icon='bar_chart', on_click=self.show_chart).props(_button_props).classes(_button_classes)
+            #ui.button(icon='bar_chart', on_click=self.show_chart).props(_button_props).classes(_button_classes)
             ui.button(icon='fingerprint', on_click=self.fingerprint).props(_button_props).classes(_button_classes)
             ui.space()
-            ui.button(icon='flip', on_click=self.flip_card).props(_button_props).classes(_button_classes)
+            ui.button(icon='keyboard_arrow_down', on_click=self.flip_card).props(_button_props).classes(_button_classes)
 
     def card_back(self):
         with ui.input('Title') as self.title_input:
@@ -111,17 +118,19 @@ class PingCard(metaclass=Registry):
                       on_change=lambda e: setattr(self.timer, 'interval', int(e.value))) \
                       .classes(' m-0 p-0 w-12').props('borderless')
 
-        # More Options
-        with ui.expansion('More Options').classes('mb-2').style(self._glass):
-            self.title_checkbox = ui.checkbox('Show title').classes('pr-2 w-full').style(self._glass)
+        with ui.row().classes('items-center'):
+            self.title_checkbox = ui.checkbox('Show title').classes('mb-1 pr-2').style(self._glass)
             self.title_checkbox.set_value(True)
             self.title.bind_visibility_from(self.title_checkbox, 'value')
+
+        # More Options
+        with ui.expansion('More Options').classes('mb-2').style(self._glass):
             ui.label('Danger Zone').classes('text-xs text-red')
             ui.button(icon='delete', on_click=self.trash).props('flat ').classes('text-xs text-red').style(self._glass)
 
         with ui.row():
             ui.space()
-            ui.button(icon='done', on_click=self.save_settings).props('flat no-shadow').classes('p-1 pl-2 pr-2 text-xs text-white').style(self._glass)
+            ui.button(icon='keyboard_arrow_up', on_click=self.save_settings).props('flat no-shadow').classes('p-1 pl-2 pr-2 text-xs text-white').style(self._glass)
 
     def card_inactive(self):
         with ui.row().classes('p-0 m-0 items-center w-full flex-nowrap'):
@@ -209,29 +218,6 @@ class PingCard(metaclass=Registry):
         self.timer.cancel()
         self.in_trash = True # <-- Prevents class instance from being saved to disk
         self.card.delete()
-
-    # def _apply_card_styling(self):
-    #     """Applies classes and style to self.card based on active state and current background."""
-    #     base_classes = 'w-full break-inside-avoid'
-    #     active_width_class = 'sm:max-w-56'  # Specific to active state
-    #
-    #     current_card_style = ''
-    #     current_card_classes = base_classes
-    #
-    #     if self.timer.active:
-    #         # When active: apply max-w, _glass style, and current background
-    #         current_card_classes = f'{base_classes} {active_width_class} {self._current_background_class}'
-    #         current_card_style = self._glass
-    #     else:
-    #         # When inactive: only base_classes, no max-w, no _glass style (explicitly unset), no background
-    #         # Add a margin for cards in the drawer
-    #         current_card_classes = f'{base_classes} m-1'  # Added m-1 for margin
-    #         # Explicitly unset properties from _glass style when inactive
-    #         current_card_style = 'backdrop-filter: none; -webkit-backdrop-filter: none; border-radius: 0; border: none;'
-    #         self._current_background_class = ''  # Ensure background is clear when inactive
-    #
-    #     self.card.classes(replace=current_card_classes.strip())
-    #     self.card.style(current_card_style)
 
     def _handle_activation_change(self):
         if self.timer.active:

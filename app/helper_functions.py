@@ -2,6 +2,7 @@ import requests
 from whois import whois
 import ipaddress
 import re
+import webbrowser
 from typing import Tuple
 
 
@@ -75,5 +76,7 @@ def get_country_from_ip(ip_address: str) -> str:
     except requests.exceptions.RequestException:
         return 'Unknown'
 
+def open_url(url: str):
+    webbrowser.open(url)
 
 
